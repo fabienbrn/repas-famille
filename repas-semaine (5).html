@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repas de la semaine</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FAF7F2;
+    --warm-white: #FFFDF9;
+    --text-dark: #1C1A17;
+    --text-mid: #5C5751;
+    --text-light: #9C9189;
+    --accent: #C4793A;
+    --accent-light: #F5E6D6;
+    --accent-dark: #8B5226;
+    --green: #4A7C59;
+    --green-light: #E6F0E9;
+    --border: #E8E2D9;
+    --border-strong: #D4CCC0;
+    --card-bg: #FFFFFF;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-dark); min-height: 100vh; }
+
+  .header { background: var(--warm-white); border-bottom: 1px solid var(--border); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 480px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; color: var(--text-dark); }
+  .header-title span { color: var(--accent); }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .btn-icon { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--cream); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all 0.2s; color: var(--text-mid); }
+  .btn-icon:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #9C9189; display: inline-block; margin-left: 6px; vertical-align: middle; transition: background 0.3s; }
+  .sync-dot.online { background: #4A7C59; }
+  .sync-dot.syncing { background: #C4793A; animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .tabs { background: var(--warm-white); border-bottom: 1px solid var(--border); display: flex; max-width: 480px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1; min-width: 80px; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 400; color: var(--text-light); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  .main { max-width: 480px; margin: 0 auto; padding: 16px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .week-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .week-label { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 400; color: var(--text-mid); }
+  .week-season { font-size: 12px; background: var(--green-light); color: var(--green); padding: 4px 10px; border-radius: 20px; font-weight: 500; }
+
+  .day-block { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  .day-header { padding: 12px 16px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--cream); }
+  .day-name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; }
+  .day-refresh-all { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-strong); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; color: var(--text-mid); transition: all 0.2s; }
+  .day-refresh-all:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+  .meal-row { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px; }
+  .meal-row:last-child { border-bottom: none; }
+  .meal-time { font-size: 11px; font-weight: 500; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; min-width: 34px; padding-top: 2px; }
+  .meal-content { flex: 1; }
+  .meal-name { font-size: 14px; font-weight: 500; color: var(--text-dark); line-height: 1.4; }
+  .meal-name.empty { color: var(--text-light); font-style: italic; font-weight: 300; }
+  .meal-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; display: inline-block; margin-top: 4px; font-weight: 500; }
+  .meal-badge.binome { background: #EEF2FF; color: #4F46E5; }
+  .meal-badge.source { background: var(--accent-light); color: var(--accent-dark); }
+  .meal-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .meal-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; color: var(--text-mid); transition: all 0.2s; }
+  .meal-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .meal-btn.recipe:hover { background: var(--green-light); color: var(--green); border-color: var(--green); }
+
+  .meal-loading { display: flex; align-items: center; gap: 8px; color: var(--text-light); font-size: 13px; font-style: italic; }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .generate-bar { padding: 16px 0 8px; }
+  .btn-generate { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-generate:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(196,121,58,0.3); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { background: var(--text-light); cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-secondary { width: 100%; padding: 13px; background: white; color: var(--accent); border: 1.5px solid var(--accent); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-secondary:hover { background: var(--accent-light); }
+
+  .courses-container { padding-top: 8px; }
+  .courses-header { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .courses-subtitle { font-size: 13px; color: var(--text-light); margin-bottom: 16px; }
+  .courses-category { margin-bottom: 16px; }
+  .courses-cat-title { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--accent-light); }
+  .course-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+  .course-item:hover { background: var(--cream); }
+  .course-item.checked { opacity: 0.5; }
+  .course-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border-strong); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all 0.2s; }
+  .course-item.checked .course-check { background: var(--green); border-color: var(--green); color: white; }
+  .course-text { font-size: 14px; flex: 1; }
+  .course-qty { font-size: 12px; color: var(--text-light); }
+
+  .recipe-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); cursor: pointer; }
+  .recipe-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .recipe-meta { display: flex; gap: 12px; margin-bottom: 8px; }
+  .recipe-meta-item { font-size: 12px; color: var(--text-light); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+  .modal-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; color: var(--text-light); margin: 16px 0 8px; }
+  .ingredients-list { list-style: none; margin-bottom: 12px; }
+  .ingredients-list li { font-size: 14px; padding: 5px 0; border-bottom: 1px solid var(--border); color: var(--text-mid); display: flex; justify-content: space-between; }
+  .ingredients-list li:last-child { border-bottom: none; }
+  .steps-list { list-style: none; counter-reset: step; }
+  .steps-list li { font-size: 13px; line-height: 1.6; padding: 8px 0 8px 32px; border-bottom: 1px solid var(--border); color: var(--text-mid); position: relative; counter-increment: step; }
+  .steps-list li::before { content: counter(step); position: absolute; left: 0; top: 8px; width: 20px; height: 20px; background: var(--accent-light); color: var(--accent); border-radius: 50%; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; }
+  .steps-list li:last-child { border-bottom: none; }
+  .modal-close { width: 100%; padding: 13px; background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; margin-top: 16px; color: var(--text-mid); }
+  .modal-close:hover { background: var(--border); }
+
+  .apikey-modal-wrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+  .apikey-modal-wrap.open { display: flex; }
+  .apikey-box { background: white; border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 420px; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text-dark); color: white; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 500; z-index: 400; transition: transform 0.3s ease; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .history-intro { font-size: 13px; color: var(--text-light); margin-bottom: 16px; line-height: 1.6; }
+  .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .history-item { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-size: 13px; line-height: 1.4; color: var(--text-mid); cursor: pointer; transition: all 0.2s; }
+  .history-item:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent-dark); }
+  .history-week { font-size: 10px; color: var(--text-light); margin-bottom: 4px; font-weight: 500; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text-mid); margin-bottom: 8px; }
+  .empty-text { font-size: 13px; line-height: 1.6; }
+
+  .settings-group { background: white; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+  .settings-row { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); gap: 12px; cursor: pointer; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-icon { font-size: 18px; color: var(--accent); width: 24px; text-align: center; }
+  .settings-label { flex: 1; font-size: 14px; }
+  .settings-value { font-size: 13px; color: var(--text-light); }
+  .settings-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; color: var(--text-light); margin: 16px 0 8px; }
+  .info-banner { background: var(--accent-light); border: 1px solid #E8C9A0; border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: var(--accent-dark); line-height: 1.5; margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag { background: var(--cream); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: 12px; color: var(--text-mid); }
+  .recipe-loading { display: flex; align-items: center; gap: 10px; padding: 20px; color: var(--text-light); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-title">🍽 Repas <span>&</span> Famille <span class="sync-dot" id="sync-dot"></span></div>
+    <div class="header-actions">
+      <div class="btn-icon" data-action="shareWeek" title="Partager">📤</div>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:480px;margin:0 auto;">
+  <div class="tabs">
+    <div class="tab active" data-action="showTab" data-tab="semaine">Semaine</div>
+    <div class="tab" data-action="showTab" data-tab="courses">Courses</div>
+    <div class="tab" data-action="showTab" data-tab="recettes">Recettes</div>
+    <div class="tab" data-action="showTab" data-tab="historique">Historique</div>
+    <div class="tab" data-action="showTab" data-tab="parametres">Réglages</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <section class="section active" id="tab-semaine">
+    <div class="week-header">
+      <div class="week-label" id="week-label">Semaine du …</div>
+      <div class="week-season" id="season-badge">🌿 Printemps</div>
+    </div>
+    <div id="meal-grid"></div>
+    <div class="generate-bar">
+      <button class="btn-generate" id="btn-gen-all" data-action="generateAllMeals">
+        <span>✨</span> Générer les repas de la semaine
+      </button>
+      <button class="btn-secondary" data-action="validateAndGoShopping">
+        <span>🛒</span> Valider et créer la liste de courses
+      </button>
+    </div>
+  </section>
+
+  <section class="section" id="tab-courses">
+    <div class="courses-container" id="courses-content">
+      <div class="empty-state">
+        <div class="empty-icon">🛒</div>
+        <div class="empty-title">Pas encore de liste</div>
+        <div class="empty-text">Générez vos repas puis cliquez sur "Valider et créer la liste de courses".</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="tab-recettes">
+    <div id="recettes-content">
+      <div class="empty-state">
+        <div class="empty-icon">📖</div>
+        <div class="empty-title">Vos recettes</div>
+        <div class="empty-text">Cliquez sur 📖 à côté d'un repas pour voir et sauvegarder sa recette.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="tab-historique">
+    <div class="history-intro">Vos semaines passées — synchronisées entre les deux téléphones.</div>
+    <div id="history-content"></div>
+  </section>
+
+  <section class="section" id="tab-parametres">
+    <div class="info-banner">
+      <span>🔄</span>
+      <span>Synchronisation Firebase active — vos deux téléphones partagent les mêmes repas en temps réel.</span>
+    </div>
+    <div class="settings-section-label">Famille</div>
+    <div class="settings-group">
+      <div class="settings-row" style="cursor:default;">
+        <div class="settings-icon">👨‍👩‍👧‍👦</div>
+        <div class="settings-label">Nombre de personnes</div>
+        <div class="settings-value">4 personnes</div>
+      </div>
+      <div class="settings-row" style="cursor:default;">
+        <div class="settings-icon">📅</div>
+        <div class="settings-label">Jour de planification</div>
+        <div class="settings-value">Dimanche soir</div>
+      </div>
+    </div>
+    <div class="settings-section-label">Règles actives</div>
+    <div class="settings-group">
+      <div class="settings-row" style="cursor:default;">
+        <div class="settings-icon">🚫</div>
+        <div class="settings-label">Pas de doublons dans la semaine</div>
+        <div class="settings-value">✅</div>
+      </div>
+      <div class="settings-row" style="cursor:default;">
+        <div class="settings-icon">🍲</div>
+        <div class="settings-label">Soupe : automne/hiver uniquement</div>
+        <div class="settings-value">✅</div>
+      </div>
+      <div class="settings-row" style="cursor:default;">
+        <div class="settings-icon">🥗</div>
+        <div class="settings-label">Salade : printemps/été uniquement</div>
+        <div class="settings-value">✅</div>
+      </div>
+      <div class="settings-row" style="cursor:default;">
+        <div class="settings-icon">🍴</div>
+        <div class="settings-label">Inspirations Amandine Cooking</div>
+        <div class="settings-value"><a href="https://www.amandinecooking.com" target="_blank" style="color:var(--accent);text-decoration:none;">lien</a></div>
+      </div>
+      <div class="settings-row" style="cursor:default;">
+        <div class="settings-icon">🔗</div>
+        <div class="settings-label">Logique binôme</div>
+        <div class="settings-value" style="font-size:11px;">Lu.soir=Ma.midi…</div>
+      </div>
+    </div>
+    <div class="settings-section-label">Compte</div>
+    <div class="settings-group">
+      <div class="settings-row" data-action="showApiKeyModal">
+        <div class="settings-icon">🔑</div>
+        <div class="settings-label">Clé API Gemini (gratuite)</div>
+        <div class="settings-value" id="apikey-display">—</div>
+      </div>
+      <div class="settings-row" data-action="clearAll" style="color:#E24B4A;">
+        <div class="settings-icon">🗑️</div>
+        <div class="settings-label" style="color:#E24B4A;">Effacer tous les repas</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- RECIPE MODAL -->
+<div class="modal-overlay" id="recipe-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="recipe-modal-body"><div class="recipe-loading"><div class="spinner"></div> Chargement…</div></div>
+    <button class="modal-close" data-action="closeModal">Fermer</button>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="apikey-modal-wrap" id="apikey-modal">
+  <div class="apikey-box">
+    <div style="font-size:32px;text-align:center;margin-bottom:12px;">🔑</div>
+    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;text-align:center;margin-bottom:8px;">Clé API Gemini (gratuite)</div>
+    <div style="font-size:13px;color:var(--text-light);text-align:center;margin-bottom:20px;line-height:1.6;">
+      Clé gratuite Google AI Studio.<br>Stockée uniquement sur cet appareil.
+    </div>
+    <input type="password" id="apikey-input" placeholder="AIzaSy…"
+      style="width:100%;padding:12px 14px;border:1.5px solid var(--border-strong);border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:6px;"
+      oninput="document.getElementById('apikey-err').textContent=''"
+    />
+    <div id="apikey-err" style="font-size:12px;color:#E24B4A;margin-bottom:12px;min-height:16px;"></div>
+    <button data-action="confirmApiKey" style="width:100%;padding:14px;background:var(--accent);color:white;border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;">
+      Enregistrer
+    </button>
+    <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:12px;">
+      Clé gratuite sur <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">aistudio.google.com</a> → Get API Key
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCimxe3qJp7uy_ZmI41XgH88yH1oOwR5cQ",
+  authDomain: "planificateur-de-repas-ba3a2.firebaseapp.com",
+  projectId: "planificateur-de-repas-ba3a2",
+  storageBucket: "planificateur-de-repas-ba3a2.firebasestorage.app",
+  messagingSenderId: "802891733874",
+  appId: "1:802891733874:web:b668cfccb758cc53141beb"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const FAMILY_DOC = doc(db, "famille", "repas");
+
+// ── Constantes ────────────────────────────────────────────────────────────────
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
+const DAYS = [
+  { key: 'lundi',    label: 'Lundi' },
+  { key: 'mardi',    label: 'Mardi' },
+  { key: 'mercredi', label: 'Mercredi' },
+  { key: 'jeudi',    label: 'Jeudi' },
+  { key: 'vendredi', label: 'Vendredi' },
+  { key: 'samedi',   label: 'Samedi' },
+];
+
+const BINOMES = [
+  ['lundi','soir','mardi','midi'],
+  ['mardi','soir','mercredi','midi'],
+  ['mercredi','soir','jeudi','midi'],
+  ['jeudi','soir','vendredi','midi'],
+  ['vendredi','soir','samedi','midi'],
+];
+const DERIVED = new Set(BINOMES.map(b => `${b[2]}_${b[3]}`));
+
+const SLOTS = {
+  lundi:    ['midi','soir'],
+  mardi:    ['midi','soir'],
+  mercredi: ['midi','soir'],
+  jeudi:    ['midi','soir'],
+  vendredi: ['midi','soir'],
+  samedi:   ['midi'],
+};
+
+// ── État local ────────────────────────────────────────────────────────────────
+let state = { meals: {}, courses: null, history: [] };
+let isSyncing = false;
+let remoteUpdatePending = false;
+
+// ── Clé API ───────────────────────────────────────────────────────────────────
+function getApiKey() { return localStorage.getItem('repas_apikey') || ''; }
+function saveApiKey(k) { localStorage.setItem('repas_apikey', k.trim()); }
+
+// ── Firebase sync ─────────────────────────────────────────────────────────────
+function setSyncDot(status) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + status;
+}
+
+async function pushToFirebase() {
+  try {
+    setSyncDot('syncing');
+    const toSave = {
+      meals: JSON.parse(JSON.stringify(state.meals)),
+      courses: state.courses,
+      history: state.history,
+      updatedAt: Date.now(),
+    };
+    // strip loading states before push
+    Object.keys(toSave.meals).forEach(k => {
+      if (toSave.meals[k] && toSave.meals[k].loading) delete toSave.meals[k];
+    });
+    await setDoc(FAMILY_DOC, toSave);
+    setSyncDot('online');
+  } catch(e) {
+    setSyncDot('');
+    console.error('Firebase push error', e);
+  }
+}
+
+function startFirebaseListener() {
+  onSnapshot(FAMILY_DOC, (snap) => {
+    if (!snap.exists()) { setSyncDot('online'); return; }
+    const remote = snap.data();
+    if (isSyncing) return; // ignore our own writes
+    const localUpdated = state.updatedAt || 0;
+    const remoteUpdated = remote.updatedAt || 0;
+    if (remoteUpdated > localUpdated) {
+      state.meals   = remote.meals   || {};
+      state.courses  = remote.courses  || null;
+      state.history  = remote.history  || [];
+      state.updatedAt = remoteUpdated;
+      renderGrid();
+      renderHistory();
+      if (state.courses) renderCourses(state.courses);
+      showToast('🔄 Mis à jour par votre partenaire');
+    }
+    setSyncDot('online');
+  }, (err) => {
+    console.error('Firestore listener error', err);
+    setSyncDot('');
+  });
+}
+
+async function loadFromFirebase() {
+  try {
+    setSyncDot('syncing');
+    const snap = await getDoc(FAMILY_DOC);
+    if (snap.exists()) {
+      const d = snap.data();
+      state.meals    = d.meals    || {};
+      state.courses   = d.courses   || null;
+      state.history   = d.history   || [];
+      state.updatedAt = d.updatedAt  || 0;
+    }
+    setSyncDot('online');
+  } catch(e) {
+    setSyncDot('');
+    console.error('Firebase load error', e);
+  }
+}
+
+// ── Saison ────────────────────────────────────────────────────────────────────
+function getSeason() {
+  const m = new Date().getMonth() + 1;
+  if (m >= 3 && m <= 5) return { label: '🌸 Printemps', key: 'printemps' };
+  if (m >= 6 && m <= 8) return { label: '☀️ Été',       key: 'ete' };
+  if (m >= 9 && m <= 11) return { label: '🍂 Automne',  key: 'automne' };
+  return { label: '❄️ Hiver', key: 'hiver' };
+}
+
+function getWeekLabel() {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(today); monday.setDate(diff);
+  const friday = new Date(monday); friday.setDate(monday.getDate() + 4);
+  const fmt = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return `${fmt(monday)} – ${fmt(friday)}`;
+}
+
+const season = getSeason();
+
+// ── Repas de référence ────────────────────────────────────────────────────────
+const MEAL_HIST_FAMILY = [
+  "purée de carottes et saucisses au four","quiche brocoli chorizo","pasta butternut parmesan",
+  "poulet curry noix de cajou haricots verts","gratin de pâtes champignons","saucisses au four champignons bacon",
+  "soupe butternut","parmentier poulet","riz ratatouille et boulettes","quiche butternut jambon",
+  "poulet crème moutarde carottes","lentilles poireaux carottes jambon","taboulé crevettes",
+  "salade pâtes tomate jambon","quiche poireaux thon","filet mignon au chorizo",
+  "tarte poivron chèvre bûche","one pot pasta chorizo brocoli","curry boeuf lait de coco",
+  "pâtes merguez épinards mascarpone","gratin de pâtes poireaux chorizo","risotto champignons bacon",
+];
+
+const AMANDINE_INSPO = {
+  printemps: [
+    "risotto asperges vertes crevettes","veau mijoté légumes de printemps","one pot pasta dinde petits pois",
+    "tarte tatin salée carottes nouvelles","quiche sans pâte thon courgettes","filet mignon moutarde champignons",
+    "gratin de pâtes poireaux chorizo","poulet miel soja","orzo complet courgettes chèvre",
+    "gaufres salées courgette parmesan","pâtes aux légumes chorizo","sauté de veau chorizo pommes de terre",
+  ],
+  ete: [
+    "ratatouille","paella rapide","salade de pâtes thon tomates olives",
+    "taboulé crevettes feta","poulet grillé légumes du soleil","quiche courgette chèvre",
+    "wraps jambon crudités fromage frais","salade niçoise","omelette ratatouille",
+    "gratin de courgettes jambon","tacos boeuf asiatique","brochettes poulet légumes",
+  ],
+  automne: [
+    "curry boeuf lait de coco","gratin pâtes poireaux chorizo","risotto champignons bacon ricotta",
+    "soupe butternut","parmentier saumon","one pot riz saucisses","filet mignon crème champignons pâtes",
+    "pâtes merguez épinards mascarpone","poulet rôti légumes automne","gratin dauphinois saucisse",
+    "dahl lentilles corail tomates","chili con carne",
+  ],
+  hiver: [
+    "soupe poireaux pommes de terre","parmentier poulet","gratin chou-fleur jambon",
+    "curry poulet lait de coco riz","lentilles vertes saucisses fumées","soupe potimarron curry",
+    "boeuf bourguignon rapide","filet mignon chorizo","blanquette veau simplifiée",
+    "gratin pâtes béchamel jambon","risotto butternut parmesan","mijoté porc légumes racines",
+  ],
+};
+
+// ── Rendu UI ──────────────────────────────────────────────────────────────────
+function initUI() {
+  document.getElementById('week-label').textContent = getWeekLabel();
+  document.getElementById('season-badge').textContent = season.label;
+  const k = getApiKey();
+  const el = document.getElementById('apikey-display');
+  if (el) el.textContent = k ? k.slice(0,8) + '…' : 'Non définie';
+  renderGrid();
+  renderHistory();
+}
+
+function isSourceBinome(day, slot) {
+  return BINOMES.some(b => b[0] === day && b[1] === slot);
+}
+
+function renderGrid() {
+  const grid = document.getElementById('meal-grid');
+  grid.innerHTML = '';
+  Object.keys(SLOTS).forEach(day => {
+    const block = document.createElement('div');
+    block.className = 'day-block';
+    const dayLabel = DAYS.find(d => d.key === day).label;
+    block.innerHTML = `
+      <div class="day-header">
+        <div class="day-name">${dayLabel}</div>
+        <div class="day-refresh-all" onclick="refreshDay('${day}')" title="Régénérer ${dayLabel}">🔄</div>
+      </div>`;
+    SLOTS[day].forEach(slot => {
+      const key = `${day}_${slot}`;
+      const row = document.createElement('div');
+      row.className = 'meal-row';
+      row.id = `row-${key}`;
+      row.innerHTML = buildMealRowHTML(day, slot);
+      block.appendChild(row);
+    });
+    grid.appendChild(block);
+  });
+}
+
+function buildMealRowHTML(day, slot) {
+  const key = `${day}_${slot}`;
+  const meal = state.meals[key];
+  const isDerived = DERIVED.has(key);
+  const binomeSrc = BINOMES.find(b => b[2] === day && b[3] === slot);
+  const binomeLabel = binomeSrc ? `= ${DAYS.find(d => d.key === binomeSrc[0]).label} ${binomeSrc[1]}` : null;
+
+  let content = '';
+  if (!meal) {
+    content = `<div class="meal-name empty">Non défini</div>`;
+  } else if (meal.loading) {
+    content = `<div class="meal-loading"><div class="spinner"></div> Génération…</div>`;
+  } else {
+    const badge = isDerived
+      ? `<div class="meal-badge binome">${binomeLabel}</div>`
+      : (isSourceBinome(day, slot) ? `<div class="meal-badge source">🔗 binôme</div>` : '');
+    content = `<div class="meal-name">${meal.name}</div>${badge}`;
+  }
+
+  const actions = `
+    ${!isDerived ? `<div class="meal-btn" onclick="refreshMeal('${day}','${slot}')" title="Autre suggestion">🔄</div>` : ''}
+    ${meal && !meal.loading ? `<div class="meal-btn recipe" onclick="showRecipe('${day}','${slot}')" title="Voir la recette">📖</div>` : ''}
+  `;
+
+  return `
+    <div class="meal-time">${slot === 'midi' ? '🌞' : '🌙'} ${slot.charAt(0).toUpperCase()+slot.slice(1)}</div>
+    <div class="meal-content" id="content-${key}">${content}</div>
+    <div class="meal-actions" id="actions-${key}">${actions}</div>
+  `;
+}
+
+function updateMealRow(day, slot) {
+  const key = `${day}_${slot}`;
+  const rowEl = document.getElementById(`row-${key}`);
+  if (rowEl) rowEl.innerHTML = buildMealRowHTML(day, slot);
+  // propagate binome display
+  BINOMES.forEach(([sd,ss,td,ts]) => {
+    if (sd === day && ss === slot) updateMealRow(td, ts);
+  });
+}
+
+// ── API Claude ────────────────────────────────────────────────────────────────
+async function callClaude(prompt, retries = 3) {
+  const key = getApiKey();
+  const url = `${GEMINI_API_URL}?key=${key}`;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.9 }
+      })
+    });
+    if (res.status === 429) {
+      if (attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
+        continue;
+      }
+    }
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error((e && e.error && e.error.message) || ('Erreur API Gemini ' + res.status));
+    }
+    const data = await res.json();
+    return data.candidates[0].content.parts[0].text;
+  }
+  throw new Error('Quota dépassé — réessayez dans quelques secondes');
+}
+
+function getAlreadyUsedMeals() {
+  return Object.entries(state.meals)
+    .filter(([k,v]) => v && !v.loading && v.name)
+    .map(([k,v]) => v.name.toLowerCase().trim());
+}
+
+function buildMealPromptContext() {
+  const sk = season.key;
+  const existing = getAlreadyUsedMeals();
+  const amandine = (AMANDINE_INSPO[sk] || []).join(', ');
+  const saisonRule = sk === 'printemps'
+    ? 'INTERDIT: soupe. Autorisé: tartes, quiches, gratins, pâtes, risotto, légumes de saison.'
+    : sk === 'ete'
+    ? 'INTERDIT: soupe, gratin lourd. Encouragé: salades fraîches, taboulé, grillades.'
+    : sk === 'automne'
+    ? 'INTERDIT: salade verte froide comme plat principal. Encouragé: soupes, gratins, mijotés, curry.'
+    : 'INTERDIT: salade verte froide comme plat principal, taboulé. Encouragé: soupes, gratins, mijotés, pot-au-feu.';
+
+  return `Tu planifies les repas de la semaine pour une famille de 4 personnes (2 adultes, 2 enfants).
+Saison: ${sk}. Règle saisonnière: ${saisonRule}
+Style: repas simples, rapides (batch cooking dominical), inspirés de amandinecooking.com.
+Inspirations ${sk}: ${amandine}.
+Repas familiaux habituels: ${MEAL_HIST_FAMILY.slice(0,10).join(', ')}.
+${existing.length ? `DÉJÀ planifiés cette semaine (NE PAS répéter): ${existing.join(', ')}.` : ''}`;
+}
+
+// ── Génération repas ──────────────────────────────────────────────────────────
+function setMeal(day, slot, data) {
+  state.meals[`${day}_${slot}`] = data;
+  BINOMES.forEach(([sd,ss,td,ts]) => {
+    if (sd === day && ss === slot) state.meals[`${td}_${ts}`] = data;
+  });
+}
+
+function setLoadingMeal(day, slot) {
+  setMeal(day, slot, { loading: true });
+  updateMealRow(day, slot);
+}
+
+async function generateMeal(day, slot) {
+  if (!getApiKey()) { showApiKeyModal(); return; }
+  setLoadingMeal(day, slot);
+  const ctx = buildMealPromptContext();
+  const prompt = `${ctx}\nPropose UN SEUL repas pour ${day} ${slot}. Réponds UNIQUEMENT avec le nom du repas, sans ponctuation finale, sans explication.`;
+  try {
+    const name = (await callClaude(prompt)).trim().replace(/[.!?]$/, '');
+    setMeal(day, slot, { name, recipe: null });
+    updateMealRow(day, slot);
+    isSyncing = true;
+    await pushToFirebase();
+    isSyncing = false;
+  } catch(e) {
+    setMeal(day, slot, { name: 'Erreur — réessayez', recipe: null });
+    updateMealRow(day, slot);
+    showToast('⚠️ ' + e.message);
+    isSyncing = false;
+  }
+}
+
+async function generateAllMeals() {
+  if (!getApiKey()) { showApiKeyModal(); return; }
+  const btn = document.getElementById('btn-gen-all');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:white;width:16px;height:16px;border-width:2px;"></div> Génération en cours…';
+
+  const toGenerate = [];
+  Object.keys(SLOTS).forEach(day => {
+    SLOTS[day].forEach(slot => {
+      if (!DERIVED.has(`${day}_${slot}`)) toGenerate.push([day, slot]);
+    });
+  });
+
+  for (const [day, slot] of toGenerate) {
+    await generateMeal(day, slot);
+  }
+
+  saveHistory();
+  btn.disabled = false;
+  btn.innerHTML = '✨ Régénérer tous les repas';
+  showToast('✅ Repas générés et synchronisés !');
+}
+
+async function refreshMeal(day, slot) {
+  await generateMeal(day, slot);
+  showToast('🔄 Repas mis à jour');
+}
+
+window.refreshMeal = refreshMeal;
+
+async function refreshDay(day) {
+  const slots = (SLOTS[day] || []).filter(s => !DERIVED.has(`${day}_${s}`));
+  for (const slot of slots) await generateMeal(day, slot);
+  showToast(`🔄 ${DAYS.find(d=>d.key===day).label} mis à jour`);
+}
+window.refreshDay = refreshDay;
+
+// ── Recettes ──────────────────────────────────────────────────────────────────
+async function showRecipe(day, slot) {
+  const meal = state.meals[`${day}_${slot}`];
+  if (!meal || !meal.name || meal.loading) return;
+  document.getElementById('recipe-modal-body').innerHTML = `<div class="recipe-loading"><div class="spinner"></div> Chargement de la recette…</div>`;
+  document.getElementById('recipe-modal').classList.add('open');
+
+  if (meal.recipe) { renderRecipeModal(meal.name, meal.recipe); return; }
+
+  const prompt = `Donne la recette complète pour "${meal.name}" pour 4 personnes, style Amandine Cooking: familiale, simple, de saison ${season.key}.
+Réponds UNIQUEMENT en JSON valide:
+{"temps":"25 min","difficulte":"Facile","amandine_url":"URL si recette connue sur amandinecooking.com sinon null","ingredients":[{"nom":"Carottes","qty":"500g"}],"etapes":["Étape 1…"]}
+Pas de markdown, juste le JSON.`;
+
+  try {
+    const raw = await callClaude(prompt);
+    const recipe = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    state.meals[`${day}_${slot}`].recipe = recipe;
+    BINOMES.forEach(([sd,ss,td,ts]) => {
+      if (sd===day&&ss===slot && state.meals[`${td}_${ts}`]) state.meals[`${td}_${ts}`].recipe = recipe;
+    });
+    isSyncing = true;
+    await pushToFirebase();
+    isSyncing = false;
+    renderRecipeModal(meal.name, recipe);
+    addRecipeToTab(meal.name, recipe);
+  } catch(e) {
+    document.getElementById('recipe-modal-body').innerHTML = `<div style="color:var(--text-light);font-size:14px;padding:20px;">Impossible de charger la recette. Réessayez.</div>`;
+  }
+}
+window.showRecipe = showRecipe;
+
+function renderRecipeModal(name, recipe) {
+  const ingHTML = (recipe.ingredients||[]).map(i=>`<li><span>${i.nom}</span><span style="color:var(--text-light)">${i.qty}</span></li>`).join('');
+  const stepsHTML = (recipe.etapes||[]).map(s=>`<li>${s}</li>`).join('');
+  const amandineLink = recipe.amandine_url && recipe.amandine_url !== 'null' && recipe.amandine_url.includes('amandinecooking.com')
+    ? `<a href="${recipe.amandine_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--accent);text-decoration:none;padding:8px 12px;border:1px solid var(--accent-light);border-radius:var(--radius-sm);background:var(--accent-light);margin-bottom:14px;">🍴 Voir sur Amandine Cooking</a>`
+    : '';
+  document.getElementById('recipe-modal-body').innerHTML = `
+    <div class="modal-title">${name}</div>
+    <div class="recipe-meta">
+      <div class="recipe-meta-item">⏱ ${recipe.temps||'30 min'}</div>
+      <div class="recipe-meta-item">👨‍🍳 ${recipe.difficulte||'Facile'}</div>
+      <div class="recipe-meta-item">👨‍👩‍👧‍👦 4 personnes</div>
+    </div>
+    ${amandineLink}
+    <div class="modal-section-title">Ingrédients</div>
+    <ul class="ingredients-list">${ingHTML}</ul>
+    <div class="modal-section-title">Préparation</div>
+    <ol class="steps-list">${stepsHTML}</ol>`;
+}
+
+function addRecipeToTab(name, recipe) {
+  const container = document.getElementById('recettes-content');
+  if (container.querySelector('.empty-state')) container.innerHTML = '';
+  if (container.querySelector(`[data-recipe="${CSS.escape(name)}"]`)) return;
+  const card = document.createElement('div');
+  card.className = 'recipe-card';
+  card.setAttribute('data-recipe', name);
+  const ingPreview = (recipe.ingredients||[]).slice(0,3).map(i=>i.nom).join(', ');
+  card.innerHTML = `<div class="recipe-title">${name}</div><div class="recipe-meta"><div class="recipe-meta-item">⏱ ${recipe.temps||'30 min'}</div><div class="recipe-meta-item">👨‍🍳 ${recipe.difficulte||'Facile'}</div></div><div style="font-size:12px;color:var(--text-light)">${ingPreview}…</div>`;
+  card.onclick = () => { renderRecipeModal(name, recipe); document.getElementById('recipe-modal').classList.add('open'); };
+  container.appendChild(card);
+}
+
+// ── Courses ───────────────────────────────────────────────────────────────────
+async function validateAndGoShopping() {
+  const allMeals = [...new Set(Object.values(state.meals).filter(m=>m&&m.name&&!m.loading).map(m=>m.name))];
+  if (allMeals.length === 0) { showToast('⚠️ Générez d\'abord les repas'); return; }
+  showTab('courses');
+  const container = document.getElementById('courses-content');
+  container.innerHTML = `<div class="recipe-loading" style="padding:30px 0"><div class="spinner"></div> Génération de la liste de courses…</div>`;
+
+  const prompt = `Voici les repas de la semaine pour 4 personnes: ${allMeals.join(', ')}.
+Génère la liste de courses complète regroupée par rayon.
+Réponds UNIQUEMENT en JSON:
+{"categories":[{"nom":"Légumes & Fruits","items":[{"nom":"Carottes","qty":"1 kg"}]},{"nom":"Viandes & Poissons","items":[]},{"nom":"Épicerie sèche","items":[]},{"nom":"Produits frais & laitiers","items":[]}]}
+Pas de markdown, juste le JSON.`;
+
+  try {
+    const raw = await callClaude(prompt);
+    const data = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    state.courses = data;
+    isSyncing = true;
+    await pushToFirebase();
+    isSyncing = false;
+    renderCourses(data);
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--text-light);padding:20px;font-size:14px;">Erreur lors de la génération. Réessayez.</div>`;
+    showToast('⚠️ ' + e.message);
+  }
+}
+
+function renderCourses(data) {
+  const container = document.getElementById('courses-content');
+  container.innerHTML = `<div class="courses-header">Liste de courses</div><div class="courses-subtitle">Pour les repas de la semaine · 4 personnes</div>`;
+  (data.categories||[]).forEach(cat => {
+    const section = document.createElement('div');
+    section.className = 'courses-category';
+    section.innerHTML = `<div class="courses-cat-title">${cat.nom}</div>`;
+    (cat.items||[]).forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'course-item';
+      el.innerHTML = `<div class="course-check"></div><div class="course-text">${item.nom}</div><div class="course-qty">${item.qty}</div>`;
+      el.onclick = () => { el.classList.toggle('checked'); el.querySelector('.course-check').textContent = el.classList.contains('checked') ? '✓' : ''; };
+      section.appendChild(el);
+    });
+    container.appendChild(section);
+  });
+}
+
+// ── Historique ────────────────────────────────────────────────────────────────
+function saveHistory() {
+  const meals = {};
+  Object.entries(state.meals).forEach(([k,v]) => { if (v&&v.name&&!v.loading) meals[k] = v.name; });
+  if (Object.keys(meals).length === 0) return;
+  const entry = { date: getWeekLabel(), meals };
+  state.history = [entry, ...state.history].slice(0, 8);
+  renderHistory();
+}
+
+function renderHistory() {
+  const container = document.getElementById('history-content');
+  if (!state.history || state.history.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">Aucun historique</div><div class="empty-text">Vos semaines passées apparaîtront ici.</div></div>`;
+    return;
+  }
+  container.innerHTML = '';
+  state.history.forEach(entry => {
+    const weekDiv = document.createElement('div');
+    weekDiv.style.marginBottom = '16px';
+    weekDiv.innerHTML = `<div style="font-size:12px;font-weight:500;color:var(--text-light);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">${entry.date}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'history-grid';
+    Object.entries(entry.meals).slice(0, 8).forEach(([key, name]) => {
+      const [day, slot] = key.split('_');
+      const dayLabel = DAYS.find(d=>d.key===day)?.label || day;
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.innerHTML = `<div class="history-week">${dayLabel} ${slot}</div>${name}`;
+      item.title = 'Repas de la semaine passée';
+      grid.appendChild(item);
+    });
+    weekDiv.appendChild(grid);
+    container.appendChild(weekDiv);
+  });
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  ['semaine','courses','recettes','historique','parametres'].forEach((t, i) => {
+    if (t === name) document.querySelectorAll('.tab')[i]?.classList.add('active');
+  });
+}
+window.showTab = showTab;
+
+function closeModal() { document.getElementById('recipe-modal').classList.remove('open'); }
+window.closeModal = closeModal;
+document.getElementById('recipe-modal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+
+function showApiKeyModal() {
+  document.getElementById('apikey-modal').classList.add('open');
+  const k = getApiKey();
+  if (k) document.getElementById('apikey-input').value = k;
+  setTimeout(() => document.getElementById('apikey-input').focus(), 100);
+}
+window.showApiKeyModal = showApiKeyModal;
+
+function confirmApiKey() {
+  const val = document.getElementById('apikey-input').value.trim();
+  if (val.length < 10) {
+    document.getElementById('apikey-err').textContent = 'La clé doit faire au moins 10 caractères';
+    return;
+  }
+  saveApiKey(val);
+  document.getElementById('apikey-modal').classList.remove('open');
+  const el = document.getElementById('apikey-display');
+  if (el) el.textContent = val.slice(0,8) + '…';
+  showToast('✅ Clé API enregistrée');
+}
+window.confirmApiKey = confirmApiKey;
+
+document.getElementById('apikey-input').addEventListener('keydown', e => { if(e.key==='Enter') confirmApiKey(); });
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+window.showToast = showToast;
+
+function shareWeek() {
+  const meals = Object.entries(state.meals)
+    .filter(([k,v]) => v&&v.name&&!v.loading)
+    .map(([k,v]) => { const [day,slot]=k.split('_'); const dl=DAYS.find(d=>d.key===day)?.label||day; return `${dl} ${slot}: ${v.name}`; })
+    .join('\n');
+  if (navigator.share) {
+    navigator.share({ title: 'Repas de la semaine', text: meals||'Aucun repas généré' });
+  } else {
+    navigator.clipboard.writeText(meals||'').then(() => showToast('📋 Copié dans le presse-papier'));
+  }
+}
+window.shareWeek = shareWeek;
+
+function clearAll() {
+  if (!confirm('Effacer tous les repas de la semaine ?')) return;
+  state.meals = {};
+  state.courses = null;
+  isSyncing = true;
+  pushToFirebase().then(() => { isSyncing = false; });
+  renderGrid();
+  document.getElementById('courses-content').innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-title">Pas encore de liste</div></div>`;
+  showToast('🗑️ Repas effacés');
+}
+window.clearAll = clearAll;
+
+// ── Exposition des fonctions pour les boutons inline ─────────────────────────
+window.generateAllMeals = generateAllMeals;
+window.validateAndGoShopping = validateAndGoShopping;
+
+// ── Lancement ─────────────────────────────────────────────────────────────────
+// 1. Affiche la structure immédiatement
+initUI();
+
+// 2. Charge Firebase en arrière-plan puis met à jour
+(async () => {
+  try {
+    await loadFromFirebase();
+    renderGrid();
+    renderHistory();
+    if (state.courses) renderCourses(state.courses);
+  } catch(e) {
+    console.error('Firebase init error', e);
+  }
+  startFirebaseListener();
+  if (!getApiKey()) showApiKeyModal();
+})();
+
+// ── Delegated event listener (fix module scope) ───────────────────────────────
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const action = el.dataset.action;
+  const tab = el.dataset.tab;
+  if (action === 'generateAllMeals') generateAllMeals();
+  else if (action === 'validateAndGoShopping') validateAndGoShopping();
+  else if (action === 'shareWeek') shareWeek();
+  else if (action === 'showApiKeyModal') showApiKeyModal();
+  else if (action === 'clearAll') clearAll();
+  else if (action === 'confirmApiKey') confirmApiKey();
+  else if (action === 'closeModal') closeModal();
+  else if (action === 'showTab' && tab) showTab(tab);
+});
+
+</script>
+</body>
+</html>
