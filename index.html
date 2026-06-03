@@ -218,7 +218,7 @@
   <section class="section" id="tab-parametres">
     <div class="info-banner">
       <span>🔄</span>
-      <span>Synchronisation Firebase active — vos deux téléphones partagent les mêmes repas en temps réel.</span>
+      <span>Synchronisation Firebase active — vos deux téléphones partagent les mêmes repas en temps réel. Aucune clé API nécessaire.</span>
     </div>
     <div class="settings-section-label">Famille</div>
     <div class="settings-group">
@@ -286,27 +286,7 @@
   </div>
 </div>
 
-<!-- API KEY MODAL -->
-<div class="apikey-modal-wrap" id="apikey-modal">
-  <div class="apikey-box">
-    <div style="font-size:32px;text-align:center;margin-bottom:12px;">🔑</div>
-    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;text-align:center;margin-bottom:8px;">Clé API Gemini (gratuite)</div>
-    <div style="font-size:13px;color:var(--text-light);text-align:center;margin-bottom:20px;line-height:1.6;">
-      Clé gratuite Google AI Studio.<br>Stockée uniquement sur cet appareil.
-    </div>
-    <input type="password" id="apikey-input" placeholder="AIzaSy…"
-      style="width:100%;padding:12px 14px;border:1.5px solid var(--border-strong);border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:6px;"
-      oninput="document.getElementById('apikey-err').textContent=''"
-    />
-    <div id="apikey-err" style="font-size:12px;color:#E24B4A;margin-bottom:12px;min-height:16px;"></div>
-    <button data-action="confirmApiKey" style="width:100%;padding:14px;background:var(--accent);color:white;border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;">
-      Enregistrer
-    </button>
-    <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:12px;">
-      Clé gratuite sur <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">aistudio.google.com</a> → Get API Key
-    </div>
-  </div>
-</div>
+<!-- Pas de clé API nécessaire - mode local -->
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -329,8 +309,99 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 const FAMILY_DOC = doc(db, "famille", "repas");
 
+
+// ── Base de repas locale — 120 recettes, 4 saisons ───────────────────────────
+// Sources : Amandine Cooking, Marmiton, carnet famille
+// Règles : < 1h tout compris, équilibré, familial 4 personnes, pas pizza/burger
+const REPAS_DB = {
+
+  // ════════════════════════════════════════════════════
+  //  PRINTEMPS  (mars – mai)
+  // ════════════════════════════════════════════════════
+  printemps: [
+    { nom: "Risotto asperges vertes et crevettes", recette: { temps: "35 min", difficulte: "Moyen", amandine_url: "https://www.amandinecooking.com/risotto-asperges-vertes-et-crevettes.html", ingredients: [{nom:"Riz arborio",qty:"300g"},{nom:"Asperges vertes",qty:"500g"},{nom:"Crevettes décortiquées",qty:"200g"},{nom:"Bouillon de légumes chaud",qty:"1L"},{nom:"Oignon",qty:"1"},{nom:"Vin blanc",qty:"10cl"},{nom:"Parmesan",qty:"50g"},{nom:"Beurre",qty:"30g"}], etapes: ["Cuire les asperges 3 min à la vapeur puis couper en tronçons","Faire revenir l'oignon dans le beurre 3 min","Ajouter le riz, nacrer 2 min","Verser le vin blanc, laisser absorber","Ajouter le bouillon chaud louche par louche en remuant (18 min)","Incorporer asperges et crevettes 3 min avant la fin","Mantecare avec beurre et parmesan hors du feu"] } },
+    { nom: "Pâtes poulet poireaux moutarde à l'ancienne", recette: { temps: "30 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/pates-poulet-poireaux-moutarde.html", ingredients: [{nom:"Pâtes",qty:"400g"},{nom:"Blancs de poulet",qty:"2"},{nom:"Poireaux",qty:"2"},{nom:"Moutarde à l'ancienne",qty:"2 cs"},{nom:"Crème légère",qty:"20cl"},{nom:"Parmesan",qty:"40g"}], etapes: ["Cuire les pâtes al dente","Couper le poulet en dés et saisir à la poêle","Ajouter les poireaux émincés, faire fondre 5 min","Incorporer moutarde et crème, mijoter 3 min","Mélanger avec les pâtes et le parmesan"] } },
+    { nom: "One pot pasta chorizo et brocoli", recette: { temps: "20 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/one-pot-pasta-chorizo-brocoli.html", ingredients: [{nom:"Pâtes courtes",qty:"400g"},{nom:"Chorizo",qty:"150g"},{nom:"Brocoli",qty:"300g"},{nom:"Bouillon de légumes",qty:"80cl"},{nom:"Oignon",qty:"1"},{nom:"Crème",qty:"10cl"}], etapes: ["Couper chorizo en rondelles et brocoli en fleurettes","Mettre pâtes, chorizo, oignon émincé et bouillon dans une casserole","Porter à ébullition et cuire 12 min en remuant","Ajouter brocoli les 5 dernières minutes","Incorporer la crème, rectifier l'assaisonnement"] } },
+    { nom: "Filet mignon moutarde champignons", recette: { temps: "40 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/filet-mignon-moutarde-champignons.html", ingredients: [{nom:"Filet mignon de porc",qty:"600g"},{nom:"Champignons de Paris",qty:"300g"},{nom:"Moutarde à l'ancienne",qty:"3 cs"},{nom:"Crème liquide",qty:"20cl"},{nom:"Échalotes",qty:"2"},{nom:"Beurre",qty:"20g"}], etapes: ["Saisir le filet mignon dans le beurre sur toutes les faces 5 min","Réserver et faire revenir échalotes et champignons","Ajouter moutarde et crème, mélanger","Remettre le filet, couvrir et cuire 20 min à feu doux","Trancher et napper de sauce"] } },
+    { nom: "Sauté de veau chorizo pommes de terre", recette: { temps: "50 min", difficulte: "Moyen", amandine_url: "https://www.amandinecooking.com/saute-de-veau-chorizo-pommes-de-terre.html", ingredients: [{nom:"Veau à sauter",qty:"600g"},{nom:"Chorizo",qty:"100g"},{nom:"Pommes de terre",qty:"600g"},{nom:"Oignons",qty:"2"},{nom:"Tomates concassées",qty:"20cl"},{nom:"Bouillon",qty:"30cl"},{nom:"Paprika",qty:"1 cc"}], etapes: ["Faire dorer le veau en cubes","Ajouter oignons et chorizo","Incorporer tomates, bouillon et paprika","Ajouter pommes de terre en cubes","Mijoter 30 min à couvert"] } },
+    { nom: "Quiche sans pâte thon courgettes", recette: { temps: "40 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Thon en conserve",qty:"2 boîtes"},{nom:"Courgettes",qty:"2"},{nom:"Oeufs",qty:"4"},{nom:"Fromage blanc",qty:"200g"},{nom:"Gruyère râpé",qty:"80g"},{nom:"Herbes de Provence",qty:"1 cc"}], etapes: ["Préchauffer four à 180°C","Râper les courgettes et essorer","Mélanger oeufs, fromage blanc, thon égoutté, courgettes","Assaisonner et verser dans un plat huilé","Couvrir de gruyère et enfourner 30 min"] } },
+    { nom: "Boulgour pilaf poulet champignons", recette: { temps: "30 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/boulgour-pilaf-poulet-champignons.html", ingredients: [{nom:"Boulgour",qty:"300g"},{nom:"Blancs de poulet",qty:"2"},{nom:"Champignons",qty:"200g"},{nom:"Oignon",qty:"1"},{nom:"Bouillon de légumes",qty:"60cl"},{nom:"Persil",qty:"quelques brins"}], etapes: ["Faire revenir oignon et poulet en dés","Ajouter champignons et boulgour","Verser le bouillon à hauteur","Cuire 20 min à couvert","Parsemer de persil et servir"] } },
+    { nom: "Tarte aux poireaux et saumon fumé", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâte brisée",qty:"1"},{nom:"Poireaux",qty:"3"},{nom:"Saumon fumé",qty:"150g"},{nom:"Oeufs",qty:"3"},{nom:"Crème",qty:"20cl"},{nom:"Citron",qty:"1/2"}], etapes: ["Faire fondre les poireaux émincés 10 min","Étaler la pâte dans un moule","Disposer saumon et poireaux","Mélanger oeufs, crème, jus de citron, sel, poivre","Verser et enfourner 30 min à 180°C"] } },
+    { nom: "Orzo complet courgettes chèvre menthe", recette: { temps: "25 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/orzo-complet-courgettes-chevre.html", ingredients: [{nom:"Orzo",qty:"350g"},{nom:"Courgettes",qty:"2"},{nom:"Chèvre frais",qty:"100g"},{nom:"Menthe fraîche",qty:"quelques feuilles"},{nom:"Citron",qty:"1"},{nom:"Huile d'olive",qty:"3 cs"}], etapes: ["Cuire l'orzo al dente","Faire revenir les courgettes en dés à l'huile d'olive","Mélanger orzo, courgettes, chèvre émietté","Ajouter jus de citron et menthe ciselée","Servir tiède ou froid"] } },
+    { nom: "Poulet miel soja riz basmati", recette: { temps: "30 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/cuisses-poulet-air-fryer-soja-miel.html", ingredients: [{nom:"Cuisses de poulet",qty:"4"},{nom:"Miel",qty:"3 cs"},{nom:"Sauce soja",qty:"4 cs"},{nom:"Ail",qty:"2 gousses"},{nom:"Gingembre",qty:"1 cc"},{nom:"Riz basmati",qty:"300g"}], etapes: ["Mélanger miel, soja, ail pressé et gingembre","Mariner le poulet 15 min","Cuire le riz basmati","Faire dorer le poulet en cocotte","Ajouter la marinade et caraméliser 10 min","Servir avec le riz"] } },
+    { nom: "Gnocchis sauce tomate saucisses italiennes", recette: { temps: "25 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Gnocchis",qty:"500g"},{nom:"Saucisses italiennes",qty:"3"},{nom:"Sauce tomate",qty:"40cl"},{nom:"Basilic",qty:"quelques feuilles"},{nom:"Parmesan",qty:"40g"},{nom:"Ail",qty:"1 gousse"}], etapes: ["Cuire les gnocchis dans l'eau bouillante salée jusqu'à remontée","Faire revenir les saucisses émincées avec l'ail","Ajouter la sauce tomate, mijoter 5 min","Mélanger avec les gnocchis égouttés","Servir avec basilic et parmesan"] } },
+    { nom: "Hachis parmentier boeuf maison", recette: { temps: "50 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Boeuf haché",qty:"500g"},{nom:"Pommes de terre",qty:"800g"},{nom:"Oignon",qty:"1"},{nom:"Tomates concassées",qty:"20cl"},{nom:"Beurre",qty:"30g"},{nom:"Lait",qty:"10cl"},{nom:"Gruyère râpé",qty:"60g"}], etapes: ["Cuire les pommes de terre et réaliser une purée crémeuse","Faire revenir oignon et boeuf haché 8 min","Ajouter les tomates, mijoter 10 min","Disposer la viande dans un plat","Couvrir de purée, parsemer de gruyère","Gratiner 15 min à 200°C"] } },
+    { nom: "Pâtes deux saumons crème citron", recette: { temps: "25 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/pates-deux-saumons.html", ingredients: [{nom:"Pâtes",qty:"400g"},{nom:"Saumon frais",qty:"200g"},{nom:"Saumon fumé",qty:"100g"},{nom:"Crème légère",qty:"20cl"},{nom:"Citron",qty:"1"},{nom:"Aneth",qty:"quelques brins"},{nom:"Échalote",qty:"1"}], etapes: ["Cuire les pâtes al dente","Poêler le saumon frais en morceaux","Faire revenir l'échalote","Ajouter crème et jus de citron","Incorporer saumon fumé et aneth","Mélanger avec les pâtes"] } },
+    { nom: "Salade de pâtes thon tomates olives", recette: { temps: "20 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâtes courtes",qty:"300g"},{nom:"Thon en conserve",qty:"2 boîtes"},{nom:"Tomates cerises",qty:"200g"},{nom:"Olives noires",qty:"80g"},{nom:"Maïs",qty:"100g"},{nom:"Vinaigrette",qty:"4 cs"}], etapes: ["Cuire les pâtes et laisser refroidir","Couper les tomates en deux","Mélanger pâtes, thon égoutté, tomates, olives, maïs","Assaisonner avec la vinaigrette","Réfrigérer 30 min avant de servir"] } },
+    { nom: "Wraps poulet crudités fromage frais", recette: { temps: "15 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Tortillas blé",qty:"4"},{nom:"Poulet rôti effiloché",qty:"300g"},{nom:"Fromage frais type St Moret",qty:"100g"},{nom:"Salade",qty:"4 feuilles"},{nom:"Tomates",qty:"2"},{nom:"Concombre",qty:"1/2"}], etapes: ["Tartiner les tortillas de fromage frais","Disposer salade, poulet effiloché, tomates et concombre","Rouler fermement","Couper en deux et servir"] } },
+    { nom: "Gratin de pâtes poireaux chorizo", recette: { temps: "40 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/gratin-pates-poireaux-chorizo.html", ingredients: [{nom:"Pâtes",qty:"300g"},{nom:"Poireaux",qty:"2"},{nom:"Chorizo",qty:"100g"},{nom:"Béchamel légère",qty:"50cl"},{nom:"Gruyère râpé",qty:"100g"}], etapes: ["Cuire les pâtes al dente","Faire revenir poireaux émincés et chorizo","Mélanger pâtes, légumes et béchamel","Verser dans un plat","Couvrir de gruyère et enfourner 20 min à 200°C"] } },
+  ],
+
+  // ════════════════════════════════════════════════════
+  //  ÉTÉ  (juin – août)
+  // ════════════════════════════════════════════════════
+  ete: [
+    { nom: "Taboulé crevettes feta menthe", recette: { temps: "20 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Semoule fine",qty:"250g"},{nom:"Crevettes cuites",qty:"200g"},{nom:"Feta",qty:"100g"},{nom:"Tomates cerises",qty:"150g"},{nom:"Concombre",qty:"1"},{nom:"Menthe fraîche",qty:"1 bouquet"},{nom:"Citron",qty:"1"},{nom:"Huile d'olive",qty:"3 cs"}], etapes: ["Hydrater la semoule avec de l'eau bouillante salée (200ml)","Laisser gonfler 5 min puis égrainer à la fourchette","Laisser refroidir complètement","Ajouter tomates coupées, concombre en dés, feta émiettée","Incorporer crevettes et menthe ciselée","Assaisonner avec citron et huile d'olive"] } },
+    { nom: "Ratatouille et riz", recette: { temps: "40 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/ratatouille-cookeo.html", ingredients: [{nom:"Courgettes",qty:"2"},{nom:"Aubergine",qty:"1"},{nom:"Poivrons",qty:"2"},{nom:"Tomates",qty:"4"},{nom:"Oignon",qty:"1"},{nom:"Ail",qty:"2 gousses"},{nom:"Herbes de Provence",qty:"1 cs"},{nom:"Riz",qty:"300g"}], etapes: ["Couper tous les légumes en dés","Faire revenir oignon et ail","Ajouter tous les légumes et herbes","Cuire 25 min à couvert","Servir avec le riz cuit"] } },
+    { nom: "Gratin courgettes jambon gruyère", recette: { temps: "35 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Courgettes",qty:"4"},{nom:"Jambon blanc",qty:"150g"},{nom:"Crème fraîche",qty:"20cl"},{nom:"Oeufs",qty:"2"},{nom:"Gruyère râpé",qty:"80g"},{nom:"Herbes de Provence",qty:"1 cc"}], etapes: ["Trancher les courgettes et faire revenir 5 min","Couper le jambon en dés","Mélanger crème, oeufs, sel, poivre et herbes","Disposer courgettes et jambon dans un plat","Verser l'appareil, couvrir de gruyère","Enfourner 25 min à 180°C"] } },
+    { nom: "Brochettes poulet légumes marinés", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Blancs de poulet",qty:"3"},{nom:"Poivrons",qty:"2"},{nom:"Courgette",qty:"1"},{nom:"Huile d'olive",qty:"4 cs"},{nom:"Citron",qty:"1"},{nom:"Herbes de Provence",qty:"1 cs"},{nom:"Riz ou semoule",qty:"300g"}], etapes: ["Couper poulet et légumes en morceaux","Mariner 30 min avec huile, citron et herbes","Monter les brochettes en alternant","Griller 15 min en retournant à mi-cuisson","Servir avec riz ou semoule"] } },
+    { nom: "Quiche courgette chèvre thym", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâte brisée",qty:"1"},{nom:"Courgettes",qty:"2"},{nom:"Chèvre bûche",qty:"150g"},{nom:"Oeufs",qty:"3"},{nom:"Crème",qty:"20cl"},{nom:"Thym",qty:"quelques brins"}], etapes: ["Faire revenir les courgettes en rondelles 5 min","Étaler la pâte dans un moule","Disposer courgettes et chèvre en rondelles","Battre oeufs et crème, assaisonner","Verser l'appareil, parsemer de thym","Enfourner 30 min à 180°C"] } },
+    { nom: "Tacos boeuf tex-mex maison", recette: { temps: "25 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Boeuf haché 5%",qty:"500g"},{nom:"Épices tex-mex",qty:"2 cs"},{nom:"Tortillas de blé",qty:"8"},{nom:"Salade iceberg",qty:"1/4"},{nom:"Tomates",qty:"2"},{nom:"Crème fraîche légère",qty:"4 cs"},{nom:"Citron vert",qty:"1"}], etapes: ["Faire revenir le boeuf avec les épices 8 min","Couper salade et tomates","Réchauffer les tortillas à sec","Garnir de boeuf, salade, tomates","Ajouter crème fraîche et jus de citron"] } },
+    { nom: "Salade niçoise complète", recette: { temps: "20 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Thon en conserve",qty:"2 boîtes"},{nom:"Haricots verts",qty:"200g"},{nom:"Tomates",qty:"3"},{nom:"Oeufs durs",qty:"3"},{nom:"Olives noires",qty:"80g"},{nom:"Pommes de terre",qty:"300g"},{nom:"Anchois",qty:"6"}], etapes: ["Cuire haricots verts 8 min à la vapeur","Cuire pommes de terre et laisser refroidir","Préparer les oeufs durs","Disposer tous les ingrédients sur un plat","Assaisonner avec vinaigrette moutardée"] } },
+    { nom: "Pâtes crevettes courgettes citron", recette: { temps: "20 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâtes",qty:"400g"},{nom:"Crevettes décortiquées",qty:"300g"},{nom:"Courgettes",qty:"2"},{nom:"Ail",qty:"2 gousses"},{nom:"Crème légère",qty:"15cl"},{nom:"Citron",qty:"1"},{nom:"Basilic",qty:"quelques feuilles"}], etapes: ["Cuire les pâtes al dente","Faire revenir ail et courgettes en dés","Ajouter les crevettes 3 min","Incorporer crème et jus de citron","Mélanger avec les pâtes, garnir de basilic"] } },
+    { nom: "Poulet basquaise poivrons tomates", recette: { temps: "50 min", difficulte: "Moyen", amandine_url: null, ingredients: [{nom:"Poulet en morceaux",qty:"1"},{nom:"Poivrons rouges et verts",qty:"3"},{nom:"Tomates",qty:"4"},{nom:"Oignon",qty:"1"},{nom:"Ail",qty:"3 gousses"},{nom:"Bouquet garni",qty:"1"},{nom:"Piment d'Espelette",qty:"1 pincée"}], etapes: ["Faire dorer les morceaux de poulet","Faire revenir oignon, ail et poivrons en lamelles","Ajouter tomates concassées et piment","Remettre le poulet et le bouquet garni","Mijoter 35 min à couvert"] } },
+    { nom: "Salade pâtes poulet avocat", recette: { temps: "20 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâtes courtes",qty:"300g"},{nom:"Poulet rôti effiloché",qty:"200g"},{nom:"Avocats",qty:"2"},{nom:"Tomates cerises",qty:"150g"},{nom:"Maïs",qty:"80g"},{nom:"Citron",qty:"1"},{nom:"Huile d'olive",qty:"3 cs"}], etapes: ["Cuire les pâtes et refroidir","Couper avocat et tomates","Effilocher le poulet","Mélanger tous les ingrédients","Assaisonner avec citron et huile d'olive"] } },
+    { nom: "Paella rapide fruits de mer", recette: { temps: "35 min", difficulte: "Moyen", amandine_url: "https://www.amandinecooking.com/paella-cookeo.html", ingredients: [{nom:"Riz rond",qty:"300g"},{nom:"Fruits de mer surgelés",qty:"400g"},{nom:"Chorizo",qty:"100g"},{nom:"Poivron",qty:"1"},{nom:"Tomates concassées",qty:"20cl"},{nom:"Bouillon de légumes",qty:"60cl"},{nom:"Safran",qty:"1 pincée"},{nom:"Paprika",qty:"1 cc"}], etapes: ["Faire revenir chorizo et poivron","Ajouter le riz et nacrer 2 min","Incorporer tomates, bouillon, safran et paprika","Cuire 15 min sans remuer","Ajouter les fruits de mer décongelés 5 min avant la fin"] } },
+    { nom: "Omelette jambon fromage haricots verts", recette: { temps: "20 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Oeufs",qty:"8"},{nom:"Jambon",qty:"100g"},{nom:"Haricots verts",qty:"200g"},{nom:"Emmental râpé",qty:"60g"},{nom:"Beurre",qty:"20g"}], etapes: ["Cuire les haricots verts à la vapeur 8 min","Battre les oeufs avec sel et poivre","Faire chauffer le beurre dans une grande poêle","Verser les oeufs, déposer jambon et haricots","Parsemer de fromage et plier"] } },
+    { nom: "Bol Buddha quinoa légumes rôtis", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Quinoa",qty:"300g"},{nom:"Poulet",qty:"2 filets"},{nom:"Carottes",qty:"2"},{nom:"Courgette",qty:"1"},{nom:"Pois chiches cuits",qty:"200g"},{nom:"Sauce tahini",qty:"4 cs"}], etapes: ["Rôtir carottes et courgette au four 20 min","Cuire le quinoa","Griller le poulet et trancher","Disposer dans des bols","Arroser de sauce tahini"] } },
+    { nom: "Poulet grillé tabulé maison", recette: { temps: "25 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Escalopes de poulet",qty:"4"},{nom:"Semoule fine",qty:"200g"},{nom:"Tomates",qty:"2"},{nom:"Concombre",qty:"1"},{nom:"Persil plat",qty:"1 bouquet"},{nom:"Citron",qty:"2"},{nom:"Huile d'olive",qty:"4 cs"}], etapes: ["Hydrater la semoule","Cuire les escalopes grillées","Préparer le taboulé avec légumes et herbes","Assaisonner avec citron et huile","Servir avec le poulet tranché"] } },
+    { nom: "Gaspacho tomates poivrons concombre", recette: { temps: "15 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Tomates bien mûres",qty:"1 kg"},{nom:"Poivron rouge",qty:"1"},{nom:"Concombre",qty:"1"},{nom:"Oignon rouge",qty:"1/2"},{nom:"Ail",qty:"1 gousse"},{nom:"Vinaigre de Xérès",qty:"2 cs"},{nom:"Huile d'olive",qty:"4 cs"},{nom:"Pain rassis",qty:"50g"}], etapes: ["Mixer tous les légumes crus avec le pain","Ajouter vinaigre, huile, sel, poivre","Filtrer si souhaité","Réfrigérer au moins 2h avant de servir","Servir avec du pain grillé"] } },
+  ],
+
+  // ════════════════════════════════════════════════════
+  //  AUTOMNE  (septembre – novembre)
+  // ════════════════════════════════════════════════════
+  automne: [
+    { nom: "Soupe butternut curry lait de coco", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Courge butternut",qty:"1"},{nom:"Curry en poudre",qty:"1 cs"},{nom:"Lait de coco",qty:"20cl"},{nom:"Bouillon de légumes",qty:"60cl"},{nom:"Oignon",qty:"1"},{nom:"Gingembre frais",qty:"2 cm"}], etapes: ["Peler et couper la butternut en cubes","Faire revenir oignon et gingembre 3 min","Ajouter butternut, curry et bouillon","Cuire 20 min","Mixer finement","Incorporer le lait de coco et rectifier"] } },
+    { nom: "Curry boeuf lait de coco et riz", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Boeuf à braiser",qty:"600g"},{nom:"Lait de coco",qty:"40cl"},{nom:"Pâte de curry rouge",qty:"2 cs"},{nom:"Poivrons",qty:"2"},{nom:"Oignon",qty:"1"},{nom:"Riz basmati",qty:"300g"},{nom:"Coriandre",qty:"quelques feuilles"}], etapes: ["Faire dorer le boeuf en cubes","Faire revenir oignon et pâte de curry 2 min","Ajouter poivrons en lanières et lait de coco","Remettre la viande, mijoter 30 min","Servir sur le riz avec coriandre"] } },
+    { nom: "Parmentier poulet champignons", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Poulet rôti effiloché",qty:"400g"},{nom:"Pommes de terre",qty:"800g"},{nom:"Champignons de Paris",qty:"200g"},{nom:"Oignon",qty:"1"},{nom:"Beurre",qty:"40g"},{nom:"Lait",qty:"15cl"},{nom:"Gruyère râpé",qty:"60g"}], etapes: ["Faire revenir oignon et champignons 8 min","Ajouter le poulet effiloché et mélanger","Cuire les pommes de terre et préparer une purée crémeuse","Disposer le mélange poulet dans un plat","Couvrir de purée, parsemer de gruyère","Gratiner 15 min à 200°C"] } },
+    { nom: "Risotto champignons lardons ricotta", recette: { temps: "35 min", difficulte: "Moyen", amandine_url: "https://www.amandinecooking.com/risotto-champignons-lardons-ricotta.html", ingredients: [{nom:"Riz arborio",qty:"300g"},{nom:"Champignons de Paris",qty:"300g"},{nom:"Lardons fumés",qty:"100g"},{nom:"Ricotta",qty:"100g"},{nom:"Bouillon de légumes",qty:"1L"},{nom:"Oignon",qty:"1"},{nom:"Vin blanc",qty:"10cl"}], etapes: ["Faire revenir lardons et oignon","Ajouter champignons 3 min","Incorporer le riz, nacrer 2 min","Verser vin blanc puis bouillon louche par louche","Incorporer la ricotta en fin de cuisson"] } },
+    { nom: "Chili con carne maison et riz", recette: { temps: "45 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/chili-con-carne-cookeo.html", ingredients: [{nom:"Boeuf haché 5%",qty:"500g"},{nom:"Haricots rouges",qty:"400g"},{nom:"Tomates concassées",qty:"40cl"},{nom:"Oignon",qty:"1"},{nom:"Épices chili",qty:"2 cs"},{nom:"Poivron rouge",qty:"1"},{nom:"Riz",qty:"300g"}], etapes: ["Faire revenir oignon et boeuf haché","Ajouter poivron et épices","Incorporer tomates et haricots rouges","Mijoter 25 min","Servir avec le riz"] } },
+    { nom: "Pâtes butternut parmesan sauge", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâtes",qty:"400g"},{nom:"Courge butternut",qty:"400g"},{nom:"Parmesan",qty:"60g"},{nom:"Crème légère",qty:"15cl"},{nom:"Sauge séchée",qty:"1 cc"},{nom:"Noix de muscade",qty:"1 pincée"}], etapes: ["Rôtir la butternut en dés au four 20 min à 200°C","Cuire les pâtes al dente","Mixer la moitié de la butternut avec la crème","Mélanger sauce, pâtes et reste de butternut","Servir avec parmesan et sauge"] } },
+    { nom: "Poulet curry cajou haricots verts", recette: { temps: "35 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Poulet",qty:"600g"},{nom:"Haricots verts",qty:"300g"},{nom:"Noix de cajou",qty:"80g"},{nom:"Lait de coco",qty:"20cl"},{nom:"Curry",qty:"2 cs"},{nom:"Oignon",qty:"1"},{nom:"Riz",qty:"300g"}], etapes: ["Faire dorer le poulet en morceaux","Ajouter oignon et curry 2 min","Verser le lait de coco","Ajouter haricots verts et mijoter 15 min","Parsemer de cajou, servir avec riz"] } },
+    { nom: "Dahl lentilles corail épinards", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Lentilles corail",qty:"300g"},{nom:"Épinards frais",qty:"200g"},{nom:"Tomates concassées",qty:"40cl"},{nom:"Lait de coco",qty:"20cl"},{nom:"Oignon",qty:"1"},{nom:"Cumin",qty:"1 cs"},{nom:"Curcuma",qty:"1 cc"},{nom:"Riz basmati",qty:"300g"}], etapes: ["Faire revenir oignon et épices","Ajouter lentilles, tomates et lait de coco","Couvrir d'eau et cuire 20 min","Incorporer les épinards 3 min avant la fin","Servir avec le riz"] } },
+    { nom: "Gratin de pâtes champignons béchamel", recette: { temps: "40 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâtes",qty:"300g"},{nom:"Champignons de Paris",qty:"250g"},{nom:"Béchamel",qty:"50cl"},{nom:"Jambon blanc",qty:"150g"},{nom:"Gruyère râpé",qty:"100g"}], etapes: ["Cuire les pâtes al dente","Faire revenir les champignons","Couper le jambon en dés","Mélanger pâtes, champignons, jambon et béchamel","Verser dans un plat, couvrir de gruyère","Enfourner 20 min à 200°C"] } },
+    { nom: "Pâtes merguez épinards mascarpone", recette: { temps: "25 min", difficulte: "Facile", amandine_url: "https://www.amandinecooking.com/pates-merguez-epinards-mascarpone.html", ingredients: [{nom:"Pâtes",qty:"400g"},{nom:"Merguez",qty:"4"},{nom:"Épinards frais",qty:"200g"},{nom:"Mascarpone",qty:"150g"},{nom:"Ail",qty:"2 gousses"},{nom:"Tomates cerises",qty:"100g"}], etapes: ["Cuire les pâtes al dente","Faire revenir les merguez émincées avec l'ail","Ajouter les épinards et tomates","Incorporer le mascarpone","Mélanger avec les pâtes et servir"] } },
+    { nom: "Soupe poireaux pommes de terre", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Poireaux",qty:"4"},{nom:"Pommes de terre",qty:"500g"},{nom:"Bouillon de légumes",qty:"1L"},{nom:"Crème fraîche",qty:"10cl"},{nom:"Beurre",qty:"20g"}], etapes: ["Émincer les poireaux et faire fondre dans le beurre 5 min","Couper les pommes de terre en dés","Ajouter le bouillon et cuire 20 min","Mixer finement","Incorporer la crème, assaisonner"] } },
+    { nom: "One pot riz saucisses poivrons", recette: { temps: "25 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Riz long",qty:"300g"},{nom:"Saucisses de Toulouse",qty:"4"},{nom:"Bouillon de légumes",qty:"70cl"},{nom:"Poivrons",qty:"1"},{nom:"Oignon",qty:"1"},{nom:"Tomates concassées",qty:"20cl"}], etapes: ["Faire revenir saucisses coupées et légumes","Ajouter le riz et nacrer 1 min","Verser tomates et bouillon","Cuire 15 min à couvert","Mélanger et servir"] } },
+    { nom: "Gratin dauphinois saucisses fumées", recette: { temps: "55 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pommes de terre",qty:"1 kg"},{nom:"Saucisses fumées",qty:"3"},{nom:"Crème fraîche",qty:"30cl"},{nom:"Lait",qty:"20cl"},{nom:"Ail",qty:"2 gousses"},{nom:"Gruyère râpé",qty:"80g"}], etapes: ["Trancher les pommes de terre finement","Frotter le plat avec l'ail","Alterner couches de pommes de terre et saucisses","Mélanger crème et lait, assaisonner","Couvrir de gruyère et enfourner 45 min à 180°C"] } },
+    { nom: "Lentilles vertes saucisses fumées moutarde", recette: { temps: "35 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Lentilles vertes du Puy",qty:"300g"},{nom:"Saucisses fumées",qty:"3"},{nom:"Carottes",qty:"2"},{nom:"Oignon",qty:"1"},{nom:"Bouquet garni",qty:"1"},{nom:"Moutarde à l'ancienne",qty:"1 cs"}], etapes: ["Rincer les lentilles","Faire revenir oignon et carottes en dés","Ajouter lentilles, saucisses entières, bouquet garni","Couvrir d'eau et cuire 25 min","Retirer le bouquet garni, ajouter la moutarde","Couper les saucisses et servir"] } },
+    { nom: "Quiche butternut jambon emmental", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâte brisée",qty:"1"},{nom:"Courge butternut",qty:"300g"},{nom:"Jambon blanc",qty:"150g"},{nom:"Oeufs",qty:"3"},{nom:"Crème légère",qty:"20cl"},{nom:"Emmental râpé",qty:"80g"}], etapes: ["Rôtir la butternut en dés 15 min à 200°C","Étaler la pâte dans un moule","Disposer butternut et jambon en dés","Battre oeufs et crème, assaisonner","Verser l'appareil, couvrir d'emmental","Enfourner 30 min à 180°C"] } },
+  ],
+
+  // ════════════════════════════════════════════════════
+  //  HIVER  (décembre – février)
+  // ════════════════════════════════════════════════════
+  hiver: [
+    { nom: "Soupe potimarron gingembre lait de coco", recette: { temps: "35 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Potimarron",qty:"1 (env. 900g)"},{nom:"Gingembre frais",qty:"2 cm"},{nom:"Oignon",qty:"1"},{nom:"Bouillon de légumes",qty:"80cl"},{nom:"Crème de coco",qty:"10cl"},{nom:"Huile d'olive",qty:"2 cs"}], etapes: ["Peler et couper le potimarron en cubes","Faire revenir oignon et gingembre râpé","Ajouter potimarron et bouillon","Cuire 25 min puis mixer","Incorporer la crème de coco","Assaisonner et servir avec du pain"] } },
+    { nom: "Blanquette de veau riz", recette: { temps: "55 min", difficulte: "Moyen", amandine_url: null, ingredients: [{nom:"Veau à blanquette",qty:"700g"},{nom:"Carottes",qty:"3"},{nom:"Champignons",qty:"200g"},{nom:"Crème fraîche",qty:"20cl"},{nom:"Farine",qty:"2 cs"},{nom:"Bouillon de veau",qty:"50cl"},{nom:"Riz",qty:"300g"}], etapes: ["Cuire le veau 30 min dans le bouillon","Faire revenir champignons et carottes","Préparer un roux avec la farine et du beurre","Ajouter le bouillon de cuisson petit à petit","Incorporer la crème et les légumes","Servir avec le riz cuit"] } },
+    { nom: "Gratin chou-fleur jambon béchamel", recette: { temps: "40 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Chou-fleur",qty:"1"},{nom:"Jambon blanc",qty:"200g"},{nom:"Béchamel",qty:"50cl"},{nom:"Gruyère râpé",qty:"100g"},{nom:"Muscade",qty:"1 pincée"}], etapes: ["Cuire le chou-fleur en fleurettes à la vapeur 10 min","Couper le jambon en dés","Assaisonner la béchamel de muscade","Disposer chou-fleur et jambon dans un plat","Napper de béchamel, couvrir de gruyère","Enfourner 25 min à 200°C"] } },
+    { nom: "Boeuf bourguignon simplifié pâtes", recette: { temps: "55 min", difficulte: "Moyen", amandine_url: null, ingredients: [{nom:"Boeuf à mijoter",qty:"700g"},{nom:"Vin rouge",qty:"25cl"},{nom:"Lardons fumés",qty:"100g"},{nom:"Champignons",qty:"200g"},{nom:"Carottes",qty:"3"},{nom:"Oignon",qty:"1"},{nom:"Bouquet garni",qty:"1"},{nom:"Pâtes ou pommes de terre",qty:"400g"}], etapes: ["Faire dorer le boeuf en cubes et réserver","Faire revenir lardons, oignon et carottes","Remettre la viande, verser le vin rouge","Ajouter champignons et bouquet garni","Mijoter 40 min à couvert","Servir avec les pâtes ou pommes de terre"] } },
+    { nom: "Filet mignon chorizo crème pommes de terre", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Filet mignon de porc",qty:"600g"},{nom:"Chorizo",qty:"150g"},{nom:"Crème fraîche",qty:"20cl"},{nom:"Oignon",qty:"1"},{nom:"Pommes de terre",qty:"600g"},{nom:"Thym",qty:"quelques brins"}], etapes: ["Faire rôtir les pommes de terre en rondelles au four 25 min","Saisir le filet mignon 5 min de chaque côté","Faire revenir oignon et chorizo","Ajouter la crème et le thym","Remettre le filet et mijoter 15 min","Servir tranché avec les pommes de terre"] } },
+    { nom: "Risotto butternut parmesan noisettes", recette: { temps: "40 min", difficulte: "Moyen", amandine_url: null, ingredients: [{nom:"Riz arborio",qty:"300g"},{nom:"Butternut",qty:"400g"},{nom:"Bouillon de légumes",qty:"1L"},{nom:"Parmesan",qty:"60g"},{nom:"Beurre",qty:"30g"},{nom:"Échalotes",qty:"2"},{nom:"Noisettes concassées",qty:"30g"}], etapes: ["Rôtir la butternut en dés au four 20 min","Faire revenir les échalotes dans le beurre","Nacrer le riz 2 min","Ajouter le bouillon chaud louche par louche","Incorporer la butternut à mi-cuisson","Mantecare avec beurre et parmesan","Parsemer de noisettes"] } },
+    { nom: "Curry poulet lait de coco riz basmati", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Poulet",qty:"600g"},{nom:"Lait de coco",qty:"40cl"},{nom:"Curry en poudre",qty:"2 cs"},{nom:"Oignon",qty:"1"},{nom:"Riz basmati",qty:"300g"},{nom:"Coriandre fraîche",qty:"quelques feuilles"},{nom:"Citron vert",qty:"1"}], etapes: ["Faire revenir oignon et curry 2 min","Ajouter le poulet en morceaux et faire dorer","Verser le lait de coco","Mijoter 20 min à feu doux","Servir sur le riz avec coriandre et citron vert"] } },
+    { nom: "Gratin de pâtes jambon béchamel maison", recette: { temps: "40 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâtes",qty:"350g"},{nom:"Jambon blanc",qty:"200g"},{nom:"Béchamel",qty:"50cl"},{nom:"Gruyère râpé",qty:"100g"},{nom:"Muscade",qty:"1 pincée"}], etapes: ["Cuire les pâtes al dente","Couper le jambon en dés","Assaisonner la béchamel de muscade","Mélanger pâtes, jambon et béchamel","Verser dans un plat, couvrir de gruyère","Enfourner 20 min à 200°C"] } },
+    { nom: "Mijoté de porc légumes racines", recette: { temps: "55 min", difficulte: "Moyen", amandine_url: null, ingredients: [{nom:"Épaule de porc",qty:"700g"},{nom:"Carottes",qty:"3"},{nom:"Navets",qty:"2"},{nom:"Pommes de terre",qty:"400g"},{nom:"Bouillon de légumes",qty:"50cl"},{nom:"Oignon",qty:"1"},{nom:"Thym et laurier",qty:"1 bouquet"}], etapes: ["Couper le porc en cubes et faire dorer","Ajouter oignon et légumes en morceaux","Verser le bouillon et les herbes","Mijoter 40 min à couvert","Rectifier l'assaisonnement et servir"] } },
+    { nom: "Soupe lentilles carottes cumin", recette: { temps: "30 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Lentilles corail",qty:"200g"},{nom:"Carottes",qty:"4"},{nom:"Cumin en poudre",qty:"1 cs"},{nom:"Bouillon de légumes",qty:"1L"},{nom:"Oignon",qty:"1"},{nom:"Citron",qty:"1/2"},{nom:"Huile d'olive",qty:"2 cs"}], etapes: ["Faire revenir oignon et cumin","Ajouter carottes en dés et lentilles rincées","Verser le bouillon et cuire 20 min","Mixer finement","Ajouter jus de citron et assaisonner"] } },
+    { nom: "Purée de carottes saucisses au four", recette: { temps: "35 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Carottes",qty:"700g"},{nom:"Saucisses de Toulouse",qty:"4"},{nom:"Beurre",qty:"30g"},{nom:"Lait",qty:"10cl"},{nom:"Noix de muscade",qty:"1 pincée"}], etapes: ["Enfourner les saucisses 25 min à 200°C","Cuire les carottes à l'eau bouillante 20 min","Égoutter et écraser en purée","Incorporer beurre, lait chaud et muscade","Assaisonner et servir avec les saucisses"] } },
+    { nom: "Quiche brocoli chorizo gruyère", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Pâte brisée",qty:"1"},{nom:"Brocoli",qty:"300g"},{nom:"Chorizo",qty:"100g"},{nom:"Oeufs",qty:"3"},{nom:"Crème légère",qty:"20cl"},{nom:"Gruyère râpé",qty:"80g"}], etapes: ["Cuire le brocoli en fleurettes à la vapeur 8 min","Étaler la pâte dans un moule","Disposer brocoli et chorizo en tranches","Battre oeufs et crème, assaisonner","Verser l'appareil, parsemer de gruyère","Enfourner 30 min à 180°C"] } },
+    { nom: "Parmentier saumon épinards", recette: { temps: "45 min", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Saumon frais",qty:"500g"},{nom:"Épinards frais",qty:"300g"},{nom:"Pommes de terre",qty:"800g"},{nom:"Crème fraîche",qty:"15cl"},{nom:"Citron",qty:"1"},{nom:"Beurre",qty:"30g"}], etapes: ["Pocher le saumon 10 min et l'émietter","Faire tomber les épinards à la poêle","Préparer une purée crémeuse","Mélanger saumon et épinards dans un plat","Couvrir de purée et gratiner 15 min à 200°C"] } },
+    { nom: "Pot-au-feu boeuf légumes", recette: { temps: "1h", difficulte: "Facile", amandine_url: null, ingredients: [{nom:"Plat de côtes de boeuf",qty:"600g"},{nom:"Carottes",qty:"4"},{nom:"Navets",qty:"2"},{nom:"Poireaux",qty:"2"},{nom:"Pommes de terre",qty:"4"},{nom:"Bouquet garni",qty:"1"}], etapes: ["Couvrir la viande d'eau froide et porter à ébullition","Écumer et ajouter le bouquet garni","Cuire 20 min puis ajouter les légumes","Cuire encore 35 min à feu doux","Servir bouillon, viande et légumes"] } },
+  ],
+};
+
 // ── Constantes ────────────────────────────────────────────────────────────────
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+// Génération locale - pas d'API nécessaire
 
 const DAYS = [
   { key: 'lundi',    label: 'Lundi' },
@@ -578,32 +649,10 @@ function updateMealRow(day, slot) {
 }
 
 // ── API Claude ────────────────────────────────────────────────────────────────
-async function callClaude(prompt, retries = 3) {
-  const key = getApiKey();
-  const url = `${GEMINI_API_URL}?key=${key}`;
-  for (let attempt = 0; attempt < retries; attempt++) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 1000, temperature: 0.9 }
-      })
-    });
-    if (res.status === 429) {
-      if (attempt < retries - 1) {
-        await new Promise(r => setTimeout(r, (attempt + 1) * 8000));
-        continue;
-      }
-    }
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error((e && e.error && e.error.message) || ('Erreur API Gemini ' + res.status));
-    }
-    const data = await res.json();
-    return data.candidates[0].content.parts[0].text;
-  }
-  throw new Error('Quota dépassé — réessayez dans quelques secondes');
+// Pas d'API - génération locale uniquement
+async function callClaude(prompt) {
+  // Non utilisé en mode local
+  throw new Error("Mode local - pas d'API");
 }
 
 function getAlreadyUsedMeals() {
@@ -645,14 +694,23 @@ function setLoadingMeal(day, slot) {
   updateMealRow(day, slot);
 }
 
+function pickMeal(day, slot) {
+  const sk = season.key;
+  const used = getAlreadyUsedMeals();
+  const pool = REPAS_DB[sk] || [];
+  // shuffle
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  // find one not already used
+  const pick = shuffled.find(r => !used.includes(r.nom.toLowerCase().trim()));
+  return pick || shuffled[0];
+}
+
 async function generateMeal(day, slot) {
-  if (!getApiKey()) { showApiKeyModal(); return; }
   setLoadingMeal(day, slot);
-  const ctx = buildMealPromptContext();
-  const prompt = `${ctx}\nPropose UN SEUL repas pour ${day} ${slot}. Réponds UNIQUEMENT avec le nom du repas, sans ponctuation finale, sans explication.`;
+  await new Promise(r => setTimeout(r, 200)); // petit délai visuel
   try {
-    const name = (await callClaude(prompt)).trim().replace(/[.!?]$/, '');
-    setMeal(day, slot, { name, recipe: null });
+    const repas = pickMeal(day, slot);
+    setMeal(day, slot, { name: repas.nom, recipe: repas.recette || null });
     updateMealRow(day, slot);
     isSyncing = true;
     await pushToFirebase();
@@ -660,13 +718,11 @@ async function generateMeal(day, slot) {
   } catch(e) {
     setMeal(day, slot, { name: 'Erreur — réessayez', recipe: null });
     updateMealRow(day, slot);
-    showToast('⚠️ ' + e.message);
     isSyncing = false;
   }
 }
 
 async function generateAllMeals() {
-  if (!getApiKey()) { showApiKeyModal(); return; }
   const btn = document.getElementById('btn-gen-all');
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:white;width:16px;height:16px;border-width:2px;"></div> Génération en cours…';
@@ -680,7 +736,7 @@ async function generateAllMeals() {
 
   for (const [day, slot] of toGenerate) {
     await generateMeal(day, slot);
-    await new Promise(r => setTimeout(r, 7000)); // 7s entre chaque pour respecter quota Gemini
+
   }
 
   saveHistory();
@@ -707,30 +763,28 @@ window.refreshDay = refreshDay;
 async function showRecipe(day, slot) {
   const meal = state.meals[`${day}_${slot}`];
   if (!meal || !meal.name || meal.loading) return;
-  document.getElementById('recipe-modal-body').innerHTML = `<div class="recipe-loading"><div class="spinner"></div> Chargement de la recette…</div>`;
   document.getElementById('recipe-modal').classList.add('open');
-
-  if (meal.recipe) { renderRecipeModal(meal.name, meal.recipe); return; }
-
-  const prompt = `Donne la recette complète pour "${meal.name}" pour 4 personnes, style Amandine Cooking: familiale, simple, de saison ${season.key}.
-Réponds UNIQUEMENT en JSON valide:
-{"temps":"25 min","difficulte":"Facile","amandine_url":"URL si recette connue sur amandinecooking.com sinon null","ingredients":[{"nom":"Carottes","qty":"500g"}],"etapes":["Étape 1…"]}
-Pas de markdown, juste le JSON.`;
-
-  try {
-    const raw = await callClaude(prompt);
-    const recipe = JSON.parse(raw.replace(/```json|```/g, '').trim());
-    state.meals[`${day}_${slot}`].recipe = recipe;
-    BINOMES.forEach(([sd,ss,td,ts]) => {
-      if (sd===day&&ss===slot && state.meals[`${td}_${ts}`]) state.meals[`${td}_${ts}`].recipe = recipe;
-    });
-    isSyncing = true;
-    await pushToFirebase();
-    isSyncing = false;
-    renderRecipeModal(meal.name, recipe);
-    addRecipeToTab(meal.name, recipe);
-  } catch(e) {
-    document.getElementById('recipe-modal-body').innerHTML = `<div style="color:var(--text-light);font-size:14px;padding:20px;">Impossible de charger la recette. Réessayez.</div>`;
+  if (meal.recipe) {
+    renderRecipeModal(meal.name, meal.recipe);
+    addRecipeToTab(meal.name, meal.recipe);
+  } else {
+    // cherche dans la DB
+    const sk = season.key;
+    const allPools = Object.values(REPAS_DB).flat();
+    const found = allPools.find(r => r.nom.toLowerCase() === meal.name.toLowerCase());
+    if (found && found.recette) {
+      state.meals[`${day}_${slot}`].recipe = found.recette;
+      BINOMES.forEach(([sd,ss,td,ts]) => {
+        if (sd===day&&ss===slot && state.meals[`${td}_${ts}`]) state.meals[`${td}_${ts}`].recipe = found.recette;
+      });
+      isSyncing = true;
+      await pushToFirebase();
+      isSyncing = false;
+      renderRecipeModal(meal.name, found.recette);
+      addRecipeToTab(meal.name, found.recette);
+    } else {
+      document.getElementById('recipe-modal-body').innerHTML = `<div style="padding:20px;font-size:14px;color:var(--text-mid);">Recette non disponible pour ce plat.</div>`;
+    }
   }
 }
 window.showRecipe = showRecipe;
@@ -944,7 +998,7 @@ initUI();
     console.error('Firebase init error', e);
   }
   startFirebaseListener();
-  if (!getApiKey()) showApiKeyModal();
+  // Pas de clé API nécessaire en mode local
 })();
 
 // ── Delegated event listener (fix module scope) ───────────────────────────────
