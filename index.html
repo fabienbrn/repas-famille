@@ -305,9 +305,15 @@ const firebaseConfig = {
   appId: "1:802891733874:web:b668cfccb758cc53141beb"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
-const FAMILY_DOC = doc(db, "famille", "repas");
+let db = null;
+let FAMILY_DOC = null;
+try {
+  const fbApp = initializeApp(firebaseConfig);
+  db = getFirestore(fbApp);
+  FAMILY_DOC = doc(db, "famille", "repas");
+} catch(e) {
+  console.warn('Firebase init failed:', e);
+}
 
 
 // ── Base de repas locale — 120 recettes, 4 saisons ───────────────────────────
@@ -447,6 +453,7 @@ function setSyncDot(status) {
 }
 
 async function pushToFirebase() {
+  if (!FAMILY_DOC) { setSyncDot(''); return; }
   try {
     setSyncDot('syncing');
     const toSave = {
@@ -468,6 +475,7 @@ async function pushToFirebase() {
 }
 
 function startFirebaseListener() {
+  if (!FAMILY_DOC) return;
   onSnapshot(FAMILY_DOC, (snap) => {
     if (!snap.exists()) { setSyncDot('online'); return; }
     const remote = snap.data();
@@ -492,6 +500,7 @@ function startFirebaseListener() {
 }
 
 async function loadFromFirebase() {
+  if (!FAMILY_DOC) { setSyncDot(''); return; }
   try {
     setSyncDot('syncing');
     const snap = await getDoc(FAMILY_DOC);
