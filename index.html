@@ -592,7 +592,7 @@ async function callClaude(prompt, retries = 3) {
     });
     if (res.status === 429) {
       if (attempt < retries - 1) {
-        await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
+        await new Promise(r => setTimeout(r, (attempt + 1) * 8000));
         continue;
       }
     }
@@ -680,6 +680,7 @@ async function generateAllMeals() {
 
   for (const [day, slot] of toGenerate) {
     await generateMeal(day, slot);
+    await new Promise(r => setTimeout(r, 7000)); // 7s entre chaque pour respecter quota Gemini
   }
 
   saveHistory();
