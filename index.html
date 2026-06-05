@@ -330,10 +330,16 @@ let isSyncing = false;
 
 // ── Saison ────────────────────────────────────────────────────────────────────
 function getSeason() {
-  const m = new Date().getMonth()+1;
-  if(m>=3&&m<=5) return {label:'🌸 Printemps',key:'printemps',color:'#4A7C59',bg:'#E6F0E9'};
-  if(m>=6&&m<=8) return {label:'☀️ Été',key:'ete',color:'#8B6914',bg:'#FEF3C7'};
-  if(m>=9&&m<=11) return {label:'🍂 Automne',key:'automne',color:'#92400E',bg:'#FEF0E7'};
+  const now = new Date();
+  const m = now.getMonth()+1; // 1-12
+  const d = now.getDate();
+  // Dates astronomiques approx : 20/21 mars, 21/22 juin, 22/23 sept, 21/22 déc
+  const isPrintemps = (m===3&&d>=20)||(m===4)||(m===5)||(m===6&&d<21);
+  const isEte       = (m===6&&d>=21)||(m===7)||(m===8)||(m===9&&d<22);
+  const isAutomne   = (m===9&&d>=22)||(m===10)||(m===11)||(m===12&&d<21);
+  if(isPrintemps) return {label:'🌸 Printemps',key:'printemps',color:'#4A7C59',bg:'#E6F0E9'};
+  if(isEte)       return {label:'☀️ Été',key:'ete',color:'#8B6914',bg:'#FEF3C7'};
+  if(isAutomne)   return {label:'🍂 Automne',key:'automne',color:'#92400E',bg:'#FEF0E7'};
   return {label:'❄️ Hiver',key:'hiver',color:'#1E4D8C',bg:'#EFF6FF'};
 }
 function getWeekLabel() {
